@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
@@ -25,8 +26,10 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 // Middleware
+const clientUrl = process.env.CLIENT_URL;
 app.use(cors({
-  
+  origin: clientUrl ? [clientUrl, 'http://localhost:5173', 'http://localhost:3000'] : true,
+  credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -54,16 +57,34 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', userRoutes);
 
-// Serve frontend in production
+// Root endpoint
+app.get('/', (req, res) => {
+  const clientDist = path.join(__dirname, '../client/dist');
+  const indexPath = path.join(clientDist, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
+  return res.json({
+    message: 'StudyFlow AI Backend API is live!',
+    status: 'online',
+    health: '/api/health',
+    database: getDBStatus() ? 'MongoDB Connected' : 'In-Memory Fallback',
+  });
+});
+
+// Serve frontend in production if built client exists
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, '../client/dist');
-  app.use(express.static(clientDist));
-  app.get('*', (req, res, next) => {
-    if (req.originalUrl.startsWith('/api')) {
-      return next();
-    }
-    res.sendFile(path.join(clientDist, 'index.html'));
-  });
+  const indexPath = path.join(clientDist, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    app.use(express.static(clientDist));
+    app.get('*', (req, res, next) => {
+      if (req.originalUrl.startsWith('/api')) {
+        return next();
+      }
+      res.sendFile(indexPath);
+    });
+  }
 }
 
 // Centralized error handling

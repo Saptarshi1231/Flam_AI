@@ -1,0 +1,15 @@
+{
+  "name": "studyflow-ai",
+  "version": "1.0.0",
+  "description": "StudyFlow AI - Premium AI-Powered Learning Platform",
+  "private": true,
+  "scripts": {
+    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "start": "node server/server.js",
+    "dev": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "build:client": "npm run build --prefix client"
+  }
+}
